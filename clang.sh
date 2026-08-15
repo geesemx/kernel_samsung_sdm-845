@@ -1,5 +1,5 @@
 # TOOLCHAIN PATH
-TOOLCHAIN_PATH="/home/juangs/toolchain"
+TOOLCHAIN_PATH="$HOME/toolchain"
 CLANG_PATH="$TOOLCHAIN_PATH/clang-r547379/bin/"
 GCC_PATH="$TOOLCHAIN_PATH/aarch64-linux-android-4.9/bin"
 OUTPUT_DIR="out"
