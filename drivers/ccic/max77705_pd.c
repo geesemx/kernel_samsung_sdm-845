@@ -519,7 +519,7 @@ static void max77705_pd_check_pdmsg(struct max77705_usbc_platform_data *usbc_dat
 		if (psy_charger) {
 			val.intval = 0;
 			psy_charger->desc->set_property(psy_charger,
-				POWER_SUPPLY_EXT_PROP_CHGINSEL, &val);
+				(enum power_supply_property)POWER_SUPPLY_EXT_PROP_CHGINSEL, &val);
 		} else {
 			pr_err("%s: Fail to get psy charger\n", __func__);
 		}

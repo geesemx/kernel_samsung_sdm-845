@@ -2637,11 +2637,11 @@ static int sm5720_fg_set_property(struct power_supply *psy,
     case POWER_SUPPLY_PROP_STATUS:
         break;
     case POWER_SUPPLY_PROP_CHARGE_FULL:
-        if (fuelgauge->pdata->capacity_calculation_type &
+        	if (fuelgauge->pdata->capacity_calculation_type &
             SEC_FUELGAUGE_CAPACITY_TYPE_DYNAMIC_SCALE)
-            sm5720_fg_calculate_dynamic_scale(fuelgauge, val->intval);
+            	sm5720_fg_calculate_dynamic_scale(fuelgauge, val->intval);
 
-            sm5720_set_full_chg_mq(fuelgauge, sm5720_meas_mq_dump(fuelgauge));
+            		sm5720_set_full_chg_mq(fuelgauge, sm5720_meas_mq_dump(fuelgauge));
             fuelgauge->info.full_mq_dump = sm5720_meas_mq_dump(fuelgauge);
 #if defined(CONFIG_BATTERY_AGE_FORECAST)
         pr_info("%s: POWER_SUPPLY_PROP_CHARGE_FULL : q_max_now = 0x%x \n", __func__, fuelgauge->info.q_max_now);
@@ -3480,13 +3480,13 @@ static int sm5720_fuelgauge_probe(struct platform_device *pdev)
     fuelgauge->capacity_max = fuelgauge->pdata->capacity_max;
     raw_soc_val.intval = sm5720_get_soc(fuelgauge);
 
-    if (raw_soc_val.intval > fuelgauge->capacity_max)
+    	if (raw_soc_val.intval > fuelgauge->capacity_max)
         sm5720_fg_calculate_dynamic_scale(fuelgauge, 100);
 
 	/* SW/HW init code. SW/HW V Empty mode must be opposite ! */
-	fuelgauge->info.temperature = 300; /* default value */
-	pr_info("%s: SW/HW V empty init \n", __func__);
-	sm5720_fg_set_vempty(fuelgauge, VEMPTY_MODE_HW);
+			fuelgauge->info.temperature = 300; /* default value */
+			pr_info("%s: SW/HW V empty init \n", __func__);
+			sm5720_fg_set_vempty(fuelgauge, VEMPTY_MODE_HW);
 
 	fuelgauge_cfg.drv_data = fuelgauge;
 	fuelgauge->info.full_mq_dump = sm5720_get_full_chg_mq(fuelgauge);
@@ -3576,8 +3576,8 @@ static void sm5720_fuelgauge_shutdown(struct platform_device *pdev)
 {
     struct sm5720_fuelgauge_data *fuelgauge = platform_get_drvdata(pdev);
 
-    if (fuelgauge->using_hw_vempty)
-        sm5720_fg_set_vempty(fuelgauge, false);
+    	if (fuelgauge->using_hw_vempty)
+        	sm5720_fg_set_vempty(fuelgauge, false);
 
 	sm5720_meas_mq_suspend(fuelgauge);
 	/* To reduce current leakage during power off state by SM */

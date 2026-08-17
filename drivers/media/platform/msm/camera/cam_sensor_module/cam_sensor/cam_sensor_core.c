@@ -1382,7 +1382,6 @@ void cam_sensor_shutdown(struct cam_sensor_ctrl_t *s_ctrl)
 
 	s_ctrl->streamon_count = 0;
 	s_ctrl->streamoff_count = 0;
-
 	s_ctrl->sensor_state = CAM_SENSOR_INIT;
 }
 

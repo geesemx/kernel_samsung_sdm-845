@@ -64,16 +64,19 @@ class ELF:
     """
     Utils for manipulating over ELF
     """
-    def __init__(self, elf_file, readelf_path=os.environ.get('CROSS_COMPILE')+"readelf"):
+    def __init__(self, elf_file, readelf_path=os.environ.get('CROSS_COMPILE') + "readelf"):
         self.__elf_file = elf_file
         self.utils = Utils()
         self.__readelf_path = readelf_path
         self.__sections = OrderedDict()
         self.__symbols = OrderedDict()
         self.__relocs = list()
-        self.__re_hexdecimal = "\s*[0-9A-Fa-f]+\s*"
-        self.__re_sec_name = "\s*[._a-zA-Z]+\s*"
-        self.__re_type = "\s*[A-Z]+\s*"
+        self.__re_hexdecimal = r"\s*[0-9A-Fa-f]+\s*"
+        self.__re_sec_name = r"\s*[._a-zA-Z]+\s*"
+        self.__re_type = r"\s*[A-Z]+\s*"
+        self.secs = re.compile(r"^.*\[.*\](" + self.__re_sec_name + self.__re_type + self.__re_hexdecimal +
+                               r")", re.MULTILINE)
+        self.rel = re.compile(r"^(" + self.__re_hexdecimal + r")\s*", re.MULTILINE)
 
     def __readelf_raw(self, options):
         """
@@ -107,10 +110,8 @@ class ELF:
         :returns dict: {sec_addr : Section()}
         """
         if len(self.__sections) == 0:
-            sec_header = self.__readelf_raw(["-SW",  self.__elf_file]).strip()
-            secs = re.compile("^.*\[.*\](" + self.__re_sec_name + self.__re_type + self.__re_hexdecimal +
-                              self.__re_hexdecimal + self.__re_hexdecimal + ")", re.MULTILINE)
-            found = secs.findall(sec_header)
+            sec_header = self.__readelf_raw(["-SW", self.__elf_file]).strip()
+            found = self.secs.findall(sec_header)
             for line in found:
                 line = line.split()
                 if len(line) == 5:
@@ -125,7 +126,7 @@ class ELF:
         :returns dict: {sym_addr : Symbol()}
         """
         if len(self.__symbols) == 0:
-            sym_tab = self.__readelf_raw(["-sW",  self.__elf_file])
+            sym_tab = self.__readelf_raw(["-sW", self.__elf_file])
             syms = re.compile(r"^.*\d+:\s(.*$)", re.MULTILINE)
             found = syms.findall(sym_tab.strip())
             for line in found:
@@ -150,9 +151,8 @@ class ELF:
         :returns list: [reloc1, reloc2, reloc3, ..., relocN]
         """
         if len(self.__relocs) == 0:
-            relocs = self.__readelf_raw(["-rW",  self.__elf_file])
-            rel = re.compile(r"^(" + self.__re_hexdecimal + ")\s*", re.MULTILINE)
-            self.__relocs = [self.utils.to_int(el) for el in rel.findall(relocs.strip())]
+            relocs = self.__readelf_raw(["-rW", self.__elf_file])
+            self.__relocs = [self.utils.to_int(el) for el in self.rel.findall(relocs.strip())]
 
         if start_addr and end_addr is not None:
             ranged_rela = list()

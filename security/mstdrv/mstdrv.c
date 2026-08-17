@@ -241,7 +241,7 @@ extern void mst_ctrl_of_mst_hw_onoff(bool on)
 		mst_info("%s: MST_MODE notify : %d\n", __func__, value.intval);
 
                 value.intval = 0;
-                psy_do_property("mfc-charger", set, POWER_SUPPLY_EXT_PROP_WPC_EN_MST, value);
+                psy_do_property("mfc-charger", set, (enum power_supply_property) POWER_SUPPLY_EXT_PROP_WPC_EN_MST, value);
                 mst_info("%s : MFC_IC Disable notify : %d\n", __func__, value.intval);
 #endif
 #if defined(CONFIG_ARCH_QCOM)
@@ -308,7 +308,7 @@ static void of_mst_hw_onoff(bool on)
 #if defined(CONFIG_MFC_CHARGER)
                 mst_info("%s : MFC_IC Enable notify start\n", __func__);
                 value.intval = 1;
-                psy_do_property("mfc-charger", set, POWER_SUPPLY_EXT_PROP_WPC_EN_MST, value);
+				psy_do_property("mfc-charger", set, (enum power_supply_property) POWER_SUPPLY_EXT_PROP_WPC_EN_MST, value);
                 mst_info("%s : MFC_IC Enable notified : %d\n", __func__, value.intval);
 
 		value.intval = ON;
@@ -414,7 +414,7 @@ static void of_mst_hw_onoff(bool on)
 			 value.intval);
 
                 value.intval = 0;
-                psy_do_property("mfc-charger", set, POWER_SUPPLY_EXT_PROP_WPC_EN_MST, value);
+                psy_do_property("mfc-charger", set, (enum power_supply_property) POWER_SUPPLY_EXT_PROP_WPC_EN_MST, value);
                 printk("%s : MFC_IC Disable notify : %d\n", __func__, value.intval);
 #endif
 

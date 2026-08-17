@@ -11,6 +11,7 @@ import hashlib
 import bisect
 import itertools
 import binascii
+import os
 from ELF import *
 
 __author__ = "Vadym Stupakov"
@@ -26,41 +27,40 @@ class IntegrityRoutine(ELF):
     """
     Utils for fips-integrity process
     """
-    def __init__(self, elf_file, readelf_path=os.environ.get('CROSS_COMPILE')+"readelf"):
+    def __init__(self, elf_file, readelf_path=os.environ.get('CROSS_COMPILE') + "readelf"):
         ELF.__init__(self, elf_file, readelf_path)
 
     @staticmethod
-    def __remove_all_dublicates(lst):
+    def __remove_all_duplicates(lst):
         """
-        Removes all occurrences of tha same value. For instance: transforms [1, 2, 3, 1] -> [2, 3]
+        Removes all occurrences of the same value. Transforms [1, 2, 3, 1] -> [2, 3]
         :param lst: input list
-        :return: lst w/o duplicates
+        :return: list without duplicates
         """
-        to_remove = list()
-        for i in range(len(lst)):
-            it = itertools.islice(lst, i + 1, len(lst) - 1, None)
-            for j, val in enumerate(it, start=i+1):
-                if val == lst[i]:
-                    to_remove.extend([lst[i], lst[j]])
+        seen = set()
+        to_remove = set()
+        for i, val in enumerate(lst):
+            if val in seen:
+                to_remove.add(val)
+            else:
+                seen.add(val)
 
-        for el in to_remove:
-            lst.remove(el)
+        lst[:] = [x for x in lst if x not in to_remove]
 
     def get_reloc_gaps(self, start_addr, end_addr):
         """
         :param start_addr: start address :int
         :param end_addr: end address: int
-        :returns list of relocation gaps like [[gap_start, gap_end], [gap_start, gap_end], ...]
+        :returns: list of relocation gaps like [[gap_start, gap_end], [gap_start, gap_end], ...]
         """
         all_relocs = self.get_relocs(start_addr, end_addr)
-        relocs_gaps = list()
+        relocs_gaps = []
         for addr in all_relocs:
             relocs_gaps.append(addr)
             relocs_gaps.append(addr + 8)
-        self.__remove_all_dublicates(relocs_gaps)
+        self.__remove_all_duplicates(relocs_gaps)
         relocs_gaps.sort()
-        relocs_gaps = [[addr1, addr2] for addr1, addr2 in self.utils.pairwise(relocs_gaps)]
-        return relocs_gaps
+        return [[addr1, addr2] for addr1, addr2 in self.utils.pairwise(relocs_gaps)]
 
     def get_addrs_for_hmac(self, sec_sym_sequence, relocs_gaps=None):
         """
@@ -69,13 +69,17 @@ class IntegrityRoutine(ELF):
         :param relocs_gaps: [[start_gap_addr, end_gap_addr], [start_gap_addr, end_gap_addr]]
         :return: addresses for calculating HMAC: [[addr_start, addr_end], [addr_start, addr_end], ...]
         """
-        addrs_for_hmac = list()
+        addrs_for_hmac = []
         for section_name, sym_names in sec_sym_sequence.items():
             if relocs_gaps is not None and section_name == ".rodata":
                 for symbol in self.get_symbol_by_name(sym_names):
+                    if symbol is None:
+                        continue
                     addrs_for_hmac.append(symbol.addr)
             else:
                 for symbol in self.get_symbol_by_name(sym_names):
+                    if symbol is None:
+                        continue
                     addrs_for_hmac.append(symbol.addr)
         addrs_for_hmac.extend(self.utils.flatten(relocs_gaps))
         addrs_for_hmac.sort()
@@ -88,16 +92,20 @@ class IntegrityRoutine(ELF):
         :param in_bytes: byte array to write
         """
         offset = self.vaddr_to_file_offset(vaddr)
-        with open(self.get_elf_file(), "rb+") as elf_file:
-            elf_file.seek(offset)
-            elf_file.write(in_bytes)
+        try:
+            with open(self.get_elf_file(), "rb+") as elf_file:
+                elf_file.seek(offset)
+                elf_file.write(in_bytes)
+        except FileNotFoundError:
+            raise ValueError("ELF file not found")
+        except IOError as e:
+            raise ValueError(f"Error writing to ELF file: {e}")
 
     def __update_hmac(self, hmac_obj, file_obj, file_offset_start, file_offset_end):
         """
-        Update hmac from addrstart tp addr_end
-        FIXMI: it needs to implement this function via fixed block size
+        Update hmac from addrstart to addr_end
         :param file_offset_start: could be string or int
-        :param file_offset_end:   could be string or int
+        :param file_offset_end: could be string or int
         """
         file_offset_start = self.utils.to_int(file_offset_start)
         file_offset_end = self.utils.to_int(file_offset_end)
@@ -115,9 +123,15 @@ class IntegrityRoutine(ELF):
         :return: bytearray or hex string
         """
         digest = hmac.new(bytearray(key.encode("utf-8")), digestmod=hashlib.sha256)
-        with open(self.get_elf_file(), "rb") as file:
-            for addr_start, addr_end in offset_sequence:
-                self.__update_hmac(digest, file, addr_start, addr_end)
+        try:
+            with open(self.get_elf_file(), "rb") as file:
+                for addr_start, addr_end in offset_sequence:
+                    self.__update_hmac(digest, file, addr_start, addr_end)
+        except FileNotFoundError:
+            raise ValueError("ELF file not found")
+        except IOError as e:
+            raise ValueError(f"Error reading ELF file: {e}")
+
         if output_type == "byte":
             return digest.digest()
         if output_type == "hex":
@@ -166,7 +180,7 @@ class IntegrityRoutine(ELF):
         idx_start = self.find_lnearest_symbol_by_vaddr(vaddr_start)
         idx_end = self.find_lnearest_symbol_by_vaddr(vaddr_end)
 
-        sym_sec = list()
+        sym_sec = []
         for idx in range(idx_start, idx_end):
             symbol_addr = list(self.get_symbols())[idx]
             symbol = self.get_symbol_by_vaddr(symbol_addr)
@@ -186,7 +200,7 @@ class IntegrityRoutine(ELF):
         symbol_start_addr = symbol.addr
         symbol_end_addr = symbol.addr + symbol.size
         skipped_bytes = 0
-        reloc_addrs = list()
+        reloc_addrs = []
         for reloc_start, reloc_end in relocs:
             if reloc_start >= symbol_start_addr and reloc_end <= symbol_end_addr:
                 skipped_bytes += reloc_end - reloc_start
@@ -221,7 +235,7 @@ class IntegrityRoutine(ELF):
 
         print(table_format.format("N", "symbol name", "symbol address", "symbol section", "bytes skipped",
                                   "skipped bytes address range"))
-        data_to_print = list()
+        data_to_print = []
         for sec_name, sym_names in sec_sym.items():
             for symbol_start, symbol_end in self.utils.pairwise(self.get_symbol_by_name(sym_names)):
                 symbol_sec_in_range = self.find_symbols_between_vaddrs(symbol_start.addr, symbol_end.addr)
@@ -262,11 +276,16 @@ class IntegrityRoutine(ELF):
         :param vaddr_seq: [[start1, end1], [start2, end2]] start - end sequence of covered bytes
         :param out_file: file where will be stored dumped bytes
         """
-        with open(self.get_elf_file(), "rb") as elf_fp:
-            with open(out_file, "wb") as out_fp:
-                for vaddr_start, vaddr_end, in vaddr_seq:
-                    elf_fp.seek(self.vaddr_to_file_offset(vaddr_start))
-                    out_fp.write(elf_fp.read(vaddr_end - vaddr_start))
+        try:
+            with open(self.get_elf_file(), "rb") as elf_fp:
+                with open(out_file, "wb") as out_fp:
+                    for vaddr_start, vaddr_end in vaddr_seq:
+                        elf_fp.seek(self.vaddr_to_file_offset(vaddr_start))
+                        out_fp.write(elf_fp.read(vaddr_end - vaddr_start))
+        except FileNotFoundError:
+            raise ValueError("ELF file not found")
+        except IOError as e:
+            raise ValueError(f"Error writing to output file: {e}")
 
     def make_integrity(self, sec_sym, module_name, debug=False, print_reloc_addrs=False, sort_by="address",
                        reverse=False):
@@ -282,24 +301,3 @@ class IntegrityRoutine(ELF):
         rel_addr_start = self.get_symbol_by_name("first_" + module_name + "_rodata")
         rel_addr_end = self.get_symbol_by_name("last_" + module_name + "_rodata")
 
-        reloc_gaps = self.get_reloc_gaps(rel_addr_start.addr, rel_addr_end.addr)
-        addrs_for_hmac = self.get_addrs_for_hmac(sec_sym, reloc_gaps)
-
-        digest = self.get_hmac(addrs_for_hmac, "The quick brown fox jumps over the lazy dog")
-
-        self.embed_bytes(self.get_symbol_by_name("builtime_" + module_name + "_hmac").addr,
-                         self.utils.to_bytearray(digest))
-
-        self.embed_bytes(self.get_symbol_by_name("integrity_" + module_name + "_addrs").addr,
-                         self.utils.to_bytearray(addrs_for_hmac))
-
-        self.embed_bytes(self.get_symbol_by_name(module_name + "_buildtime_address").addr,
-                        self.utils.to_bytearray(self.get_symbol_by_name(module_name + "_buildtime_address").addr))
-
-        print("HMAC for \"{}\" module is: {}".format(module_name, binascii.hexlify(digest)))
-        if debug:
-            self.print_covered_info(sec_sym, reloc_gaps, print_reloc_addrs=print_reloc_addrs, sort_by=sort_by,
-                                    reverse=reverse)
-            self.dump_covered_bytes(addrs_for_hmac, "covered_dump_for_" + module_name + ".bin")
-
-        print("\nFIPS integrity procedure has been finished for {}\n".format(module_name))

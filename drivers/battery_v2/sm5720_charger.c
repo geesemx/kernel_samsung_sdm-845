@@ -656,7 +656,7 @@ static int sm5720_chg_get_property(struct power_supply *psy,
 {
 	struct sm5720_charger_data *charger = power_supply_get_drvdata(psy);
 	int status;
-	enum power_supply_ext_property ext_psp = psp;
+	enum power_supply_ext_property ext_psp = (enum power_supply_ext_property) psp;
 
 	switch (psp) {
 		case POWER_SUPPLY_PROP_STATUS:

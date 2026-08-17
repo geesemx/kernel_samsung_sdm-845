@@ -1107,7 +1107,7 @@ static int max77705_chg_get_property(struct power_supply *psy,
 {
 	struct max77705_charger_data *charger = power_supply_get_drvdata(psy);
 	u8 reg_data;
-	enum power_supply_ext_property ext_psp = psp;
+	enum power_supply_ext_property ext_psp = (enum power_supply_ext_property) psp;
 
 	switch (psp) {
 	case POWER_SUPPLY_PROP_ONLINE:
@@ -1258,7 +1258,7 @@ static int max77705_chg_set_property(struct power_supply *psy,
 	u8 reg = 0;
 	static u8 chg_int_state, chg_reg_cnfg07;
 	int buck_state = ENABLE;
-	enum power_supply_ext_property ext_psp = psp;
+	enum power_supply_ext_property ext_psp = (enum power_supply_ext_property) psp;
 	union power_supply_propval value = {0, };
 
 	/* check unlock status before does set the register */

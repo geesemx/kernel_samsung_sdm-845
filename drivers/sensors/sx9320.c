@@ -130,37 +130,37 @@ struct sx9320_p {
 	unsigned char hall_ic2[6];
 };
 
-static int sx9320_check_hallic_state(char *file_path,
-	unsigned char hall_ic_status[])
+int sx9320_check_hallic_state(char *file_path, unsigned char hall_ic_status[], size_t hall_ic_status_size)
 {
-	int iRet = 0;
-	mm_segment_t old_fs;
-	struct file *filep;
-	u8 hall_sysfs[4];
+    int iRet = 0;
+    mm_segment_t old_fs;
+    struct file *filep;
+    u8 hall_sysfs[4];
 
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
+    old_fs = get_fs();
+    set_fs(KERNEL_DS);
 
-	filep = filp_open(file_path, O_RDONLY, 0666);
-	if (IS_ERR(filep)) {
-		iRet = PTR_ERR(filep);
-		set_fs(old_fs);
-		goto exit;
-	}
+    filep = filp_open(file_path, O_RDONLY, 0666);
+    if (IS_ERR(filep)) {
+        iRet = PTR_ERR(filep);
+        set_fs(old_fs);
+        goto exit;
+    }
 
-	iRet = filep->f_op->read(filep, hall_sysfs,
-		sizeof(hall_sysfs), &filep->f_pos);
+    iRet = filep->f_op->read(filep, hall_sysfs, sizeof(hall_sysfs), &filep->f_pos);
 
-	if (iRet != sizeof(hall_sysfs))
-		iRet = -EIO;
-	else
-		strlcpy(hall_ic_status, hall_sysfs, sizeof(hall_sysfs) + 1);
+    if (iRet < 0) {
+        iRet = -EIO;
+    } else {
+        hall_sysfs[iRet] = '\0';
+        strlcpy(hall_ic_status, hall_sysfs, hall_ic_status_size);
+    }
 
-	filp_close(filep, current->files);
-	set_fs(old_fs);
+    filp_close(filep, current->files);
+    set_fs(old_fs);
 
 exit:
-	return iRet;
+    return iRet;
 }
 
 static int sx9320_get_nirq_state(struct sx9320_p *data)
@@ -1317,7 +1317,7 @@ static void sx9320_debug_work_func(struct work_struct *work)
 		}
 	}
 
-	sx9320_check_hallic_state(HALLIC1_PATH, data->hall_ic1);
+	sx9320_check_hallic_state(HALLIC1_PATH, data->hall_ic1, sizeof(data->hall_ic1));
 
 	/* Hall IC closed : offset cal (once)*/
 	if (strcmp(data->hall_ic1, "OPEN") != 0) {

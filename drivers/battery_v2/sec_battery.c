@@ -799,7 +799,7 @@ void sec_bat_set_decrease_iout(struct sec_battery_info *battery)
 			battery->input_current = input_current[i];
 			value.intval = input_current[i];
 			psy_do_property(battery->pdata->charger_name, set,
-				POWER_SUPPLY_EXT_PROP_PAD_VOLT_CTRL, value);
+                 (enum power_supply_property)POWER_SUPPLY_EXT_PROP_PAD_VOLT_CTRL, value);
 
 			if (i != step - 1)
 				msleep(300);
@@ -4197,7 +4197,7 @@ static int sec_bat_set_property(struct power_supply *psy,
 	int current_cable_type = SEC_BATTERY_CABLE_NONE;
 	int full_check_type = SEC_BATTERY_FULLCHARGED_NONE;
 	union power_supply_propval value = {0, };
-	enum power_supply_ext_property ext_psp = psp;
+	enum power_supply_ext_property ext_psp = (enum power_supply_ext_property)psp;
 
 	dev_dbg(battery->dev,
 		"%s: (%d,%d)\n", __func__, psp, val->intval);
@@ -4462,7 +4462,7 @@ static int sec_bat_get_property(struct power_supply *psy,
 {
 	struct sec_battery_info *battery = power_supply_get_drvdata(psy);
 	union power_supply_propval value = {0, };
-	enum power_supply_ext_property ext_psp = psp;
+	enum power_supply_ext_property ext_psp = (enum power_supply_ext_property)psp;
 
 	switch (psp) {
 	case POWER_SUPPLY_PROP_STATUS:
@@ -4786,7 +4786,7 @@ static int sec_wireless_set_property(struct power_supply *psy,
 				const union power_supply_propval *val)
 {
 	struct sec_battery_info *battery = power_supply_get_drvdata(psy);
-	enum power_supply_ext_property ext_psp = psp;
+	enum power_supply_ext_property ext_psp = (enum power_supply_ext_property)psp;
 
 	switch (psp) {
 	case POWER_SUPPLY_PROP_ONLINE:

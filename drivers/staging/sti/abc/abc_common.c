@@ -406,15 +406,16 @@ static void sec_abc_work_func(struct work_struct *work)
 
 	/* Parse uevent string */
 	while ((c = strsep(&p, "@")) != NULL) {
-		uevent_str[idx] = c;
-		idx++;
-	}
-	sprintf(timestamp, "TIMESTAMP=%lu", ktime_ms);
-	uevent_str[idx++] = &timestamp[0];
-	uevent_str[idx] = '\0';
-	strlcpy(event_type, uevent_str[1] + 6, sizeof(event_type));
+    uevent_str[idx] = c;
+    idx++;
+}
 
-	ABC_PRINT("event type : %s\n", event_type);
+sprintf(timestamp, "TIMESTAMP=%lu", ktime_ms);
+strcpy(uevent_str[idx++], timestamp);  // Copy 'timestamp' to 'uevent_str[idx]'
+uevent_str[idx] = (char *)'\0';
+strlcpy(event_type, uevent_str[1] + 6, sizeof(event_type));
+ABC_PRINT("event type : %s\n", event_type);
+
 
 #if defined(DEBUG_ABC)
 	/* print except for TIMESTAMP(uevent_str[idx - 1]) */

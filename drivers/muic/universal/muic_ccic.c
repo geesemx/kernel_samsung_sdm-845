@@ -718,7 +718,7 @@ static int muic_handle_ccic_RID(muic_data_t *pmuic, CC_NOTI_RID_TYPEDEF *pnoti)
 				 * USB team's requirement.
 				 * Set AP USB for enumerations.
 				 */
-				mdev_com_to(pmuic, MUIC_PATH_USB_AP);
+					mdev_com_to(pmuic, MUIC_PATH_USB_AP);
 
 				mdev_handle_legacy_TA_USB(pmuic);
 		} else {

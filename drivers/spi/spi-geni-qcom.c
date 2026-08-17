@@ -476,8 +476,7 @@ static void spi_gsi_rx_callback(void *cb)
 	struct gsi_desc_cb *desc_cb = (struct gsi_desc_cb *)cb_param->userdata;
 
 	if ( desc_cb == NULL ) {
-		GENI_SE_ERR(false, true, false,
-		"%s: Freed or Corrupted cb_param data. \n", __func__);
+		GENI_SE_ERR(NULL, true, NULL, "%s: Freed or Corrupted cb_param data.\n", __func__);
 		return;
 	} else {
 		struct spi_master *spi = desc_cb->spi;
@@ -509,8 +508,7 @@ static void spi_gsi_tx_callback(void *cb)
 	struct gsi_desc_cb *desc_cb = (struct gsi_desc_cb *)cb_param->userdata;
 
 	if ( desc_cb == NULL ) {
-		GENI_SE_ERR(false, true, false,
-		"%s: Freed or Corrupted cb_param data. \n", __func__);
+		GENI_SE_ERR(NULL, true, NULL, "%s: Freed or Corrupted cb_param data.\n", __func__);
 		return;
 	} else {
 		struct spi_master *spi = desc_cb->spi;

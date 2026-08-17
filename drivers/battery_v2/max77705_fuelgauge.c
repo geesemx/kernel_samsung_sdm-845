@@ -1816,7 +1816,7 @@ static int max77705_fg_get_property(struct power_supply *psy,
 	static int abnormal_current_cnt;
 	union power_supply_propval value;
 	u8 data[2] = { 0, 0 };
-	enum power_supply_ext_property ext_psp = psp;
+	enum power_supply_ext_property ext_psp = (enum power_supply_ext_property) psp;
 
 	switch (psp) {
 		/* Cell voltage (VCELL, mV) */
@@ -2125,7 +2125,7 @@ static int max77705_fg_set_property(struct power_supply *psy,
 	    power_supply_get_drvdata(psy);
 	u8 data[2] = { 0, 0 };
 	static bool low_temp_wa;
-	enum power_supply_ext_property ext_psp = psp;
+	enum power_supply_ext_property ext_psp = (enum power_supply_ext_property) psp;
 
 	switch (psp) {
 	case POWER_SUPPLY_PROP_STATUS:
